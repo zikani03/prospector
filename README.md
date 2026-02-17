@@ -2,6 +2,10 @@
 
 A Chrome DevTools extension that tracks visited pages and compares UI elements (buttons, inputs, headings, links, images) for visual and structural consistency.
 
+> NOTE: still in early development. Built with the help of [Amp](https://ampcode.com)
+
+![[]](./screenshot-0.png)
+
 ## Features
 
 - **DevTools Panel** — appears as a "Prospector" tab alongside Elements, Console, etc.
