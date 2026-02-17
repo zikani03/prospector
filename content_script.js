@@ -154,6 +154,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const framework = detectSPAFramework();
     sendResponse({
       url: getPageURL(),
+      fullUrl: window.location.href,
       title: document.title,
       timestamp: Date.now(),
       framework,

@@ -12,6 +12,7 @@ let currentIssues = [];
 const btnScan = document.getElementById("btn-scan");
 const btnCompare = document.getElementById("btn-compare");
 const btnClear = document.getElementById("btn-clear");
+const btnExport = document.getElementById("btn-export");
 const statusText = document.getElementById("status-text");
 const summaryBar = document.getElementById("summary-bar");
 const errorCount = document.getElementById("error-count");
@@ -67,6 +68,55 @@ btnClear.addEventListener("click", () => {
   } catch (e) {
     // Service worker may be inactive; local state is already cleared
   }
+});
+
+btnExport.addEventListener("click", () => {
+  if (snapshots.length === 0 && currentIssues.length === 0) {
+    statusText.textContent = "Nothing to export";
+    return;
+  }
+
+  const issuesByCategory = {};
+  currentIssues.forEach((issue) => {
+    if (!issuesByCategory[issue.category]) issuesByCategory[issue.category] = [];
+    issuesByCategory[issue.category].push({
+      severity: issue.severity,
+      message: issue.message,
+      detail: issue.detail || null,
+      url: issue.url || null,
+    });
+  });
+
+  const report = {
+    exportedAt: new Date().toISOString(),
+    summary: {
+      totalPages: snapshots.length,
+      totalIssues: currentIssues.length,
+      errors: currentIssues.filter((i) => i.severity === "error").length,
+      warnings: currentIssues.filter((i) => i.severity === "warning").length,
+      info: currentIssues.filter((i) => i.severity === "info").length,
+    },
+    pages: snapshots.map((snap) => ({
+      url: snap.fullUrl || snap.url,
+      title: snap.title,
+      scannedAt: new Date(snap.timestamp).toISOString(),
+      framework: snap.framework || null,
+      isSPA: snap.isSPA || false,
+      elementCounts: Object.fromEntries(
+        Object.entries(snap.elements).map(([cat, els]) => [cat, els.length])
+      ),
+    })),
+    issues: issuesByCategory,
+  };
+
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `prospector-report-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  statusText.textContent = "Report exported";
 });
 
 // --- Message handling ---
