@@ -90,6 +90,12 @@ port.onMessage.addListener((message) => {
     case "SNAPSHOTS_LIST":
       snapshots = message.data;
       renderPages(snapshots);
+      if (snapshots.length === 0) {
+        currentIssues = [];
+        renderIssues([]);
+        renderElements(null);
+        summaryBar.style.display = "none";
+      }
       updateSummary();
       break;
   }
