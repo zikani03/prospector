@@ -177,7 +177,7 @@ function renderPages(pages) {
 
     html += `
       <div class="snapshot-item" onclick="showSnapshotElements(${index})">
-        <span class="snapshot-url" title="${escapeHtml(snap.url)}">${escapeHtml(snap.title || snap.url)}</span>
+        <span class="snapshot-url" title="${escapeHtml(snap.url)}">${escapeHtml(snap.title || snap.url)} <span style="color:var(--text-secondary)">${escapeHtml(getPathFragment(snap.url))}</span></span>
         <span class="snapshot-badges">
           ${snap.framework ? `<span class="badge" style="color:#89d185">${escapeHtml(snap.framework)}${snap.isSPA ? " (SPA)" : ""}</span>` : ""}
           ${Object.entries(snap.elements)
@@ -280,6 +280,18 @@ function shortenUrl(url) {
   try {
     const u = new URL(url);
     return u.host + u.pathname;
+  } catch {
+    return url;
+  }
+}
+
+function getPathFragment(url) {
+  try {
+    const u = new URL(url);
+    const path = u.pathname === "/" ? "" : u.pathname;
+    const hash = u.hash || "";
+    const combined = path + hash;
+    return combined || "/";
   } catch {
     return url;
   }
