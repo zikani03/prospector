@@ -55,7 +55,6 @@ btnCompare.addEventListener("click", () => {
 });
 
 btnClear.addEventListener("click", () => {
-  port.postMessage({ type: "CLEAR_SNAPSHOTS" });
   snapshots = [];
   currentIssues = [];
   renderIssues([]);
@@ -63,6 +62,11 @@ btnClear.addEventListener("click", () => {
   renderElements(null);
   statusText.textContent = "Cleared";
   summaryBar.style.display = "none";
+  try {
+    port.postMessage({ type: "CLEAR_SNAPSHOTS" });
+  } catch (e) {
+    // Service worker may be inactive; local state is already cleared
+  }
 });
 
 // --- Message handling ---
@@ -175,6 +179,7 @@ function renderPages(pages) {
       <div class="snapshot-item" onclick="showSnapshotElements(${index})">
         <span class="snapshot-url" title="${escapeHtml(snap.url)}">${escapeHtml(snap.title || snap.url)}</span>
         <span class="snapshot-badges">
+          ${snap.framework ? `<span class="badge" style="color:#89d185">${escapeHtml(snap.framework)}${snap.isSPA ? " (SPA)" : ""}</span>` : ""}
           ${Object.entries(snap.elements)
             .map(([cat, els]) => (els.length > 0 ? `<span class="badge">${els.length} ${cat}</span>` : ""))
             .join("")}
