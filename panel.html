@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    :root {
+      --bg-primary: #1e1e1e;
+      --bg-secondary: #252526;
+      --bg-tertiary: #2d2d2d;
+      --bg-hover: #37373d;
+      --text-primary: #cccccc;
+      --text-secondary: #9d9d9d;
+      --text-bright: #e0e0e0;
+      --accent: #007acc;
+      --accent-hover: #1a8ad4;
+      --border: #3c3c3c;
+      --error: #f14c4c;
+      --warning: #cca700;
+      --info: #3794ff;
+      --success: #89d185;
+      --error-bg: #5a1d1d;
+      --warning-bg: #4d3e00;
+      --info-bg: #1a3a5c;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .toolbar button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .toolbar button:hover {
+      background: var(--accent-hover);
+    }
+
+    .toolbar button.secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .toolbar button.secondary:hover {
+      background: var(--bg-hover);
+    }
+
+    .toolbar button.danger {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .toolbar button.danger:hover {
+      background: var(--error-bg);
+      color: var(--error);
+    }
+
+    .toolbar .spacer {
+      flex: 1;
+    }
+
+    .toolbar .status {
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .tab {
+      padding: 6px 14px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      border-bottom: 2px solid transparent;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .tab.active {
+      color: var(--text-bright);
+      border-bottom-color: var(--accent);
+    }
+
+    /* Content area */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* Issues list (VS Code problems-style) */
+    .issue-group {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .issue-group-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-bright);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .issue-group-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .issue-group-header .count {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+      font-weight: normal;
+    }
+
+    .issue-group-header .arrow {
+      font-size: 10px;
+      transition: transform 0.15s;
+    }
+
+    .issue-group-header.collapsed .arrow {
+      transform: rotate(-90deg);
+    }
+
+    .issue-list {
+      list-style: none;
+    }
+
+    .issue-group-header.collapsed + .issue-list {
+      display: none;
+    }
+
+    .issue-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 3px 8px 3px 24px;
+      cursor: default;
+      line-height: 1.5;
+    }
+
+    .issue-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .issue-icon {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+      text-align: center;
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .issue-icon.error { color: var(--error); }
+    .issue-icon.warning { color: var(--warning); }
+    .issue-icon.info { color: var(--info); }
+
+    .issue-message {
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .issue-detail {
+      color: var(--text-secondary);
+      font-size: 11px;
+    }
+
+    /* Snapshot list */
+    .snapshot-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      cursor: default;
+    }
+
+    .snapshot-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .snapshot-url {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-bright);
+    }
+
+    .snapshot-time {
+      color: var(--text-secondary);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .snapshot-badges {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      padding: 1px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    /* Element details */
+    .element-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+
+    .element-table th {
+      text-align: left;
+      padding: 4px 8px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: normal;
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+    }
+
+    .element-table td {
+      padding: 3px 8px;
+      border-bottom: 1px solid var(--border);
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .element-table tr:hover td {
+      background: var(--bg-hover);
+    }
+
+    .highlight {
+      background: var(--warning-bg);
+      color: var(--warning);
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      text-align: center;
+      gap: 8px;
+    }
+
+    .empty-state .icon {
+      font-size: 32px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      max-width: 300px;
+      line-height: 1.5;
+    }
+
+    /* Summary bar */
+    .summary-bar {
+      display: flex;
+      gap: 12px;
+      padding: 6px 8px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .summary-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .summary-stat .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .dot.error { background: var(--error); }
+    .dot.warning { background: var(--warning); }
+    .dot.info { background: var(--info); }
+    .dot.success { background: var(--success); }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button id="btn-scan">⟳ Scan Page</button>
+    <button id="btn-compare" class="secondary">⇔ Compare All</button>
+    <span class="spacer"></span>
+    <span class="status" id="status-text">Ready</span>
+    <button id="btn-clear" class="danger">✕ Clear</button>
+  </div>
+
+  <div id="summary-bar" class="summary-bar" style="display: none;">
+    <span class="summary-stat"><span class="dot error"></span><span id="error-count">0</span> errors</span>
+    <span class="summary-stat"><span class="dot warning"></span><span id="warning-count">0</span> warnings</span>
+    <span class="summary-stat"><span class="dot info"></span><span id="info-count">0</span> info</span>
+    <span class="summary-stat"><span class="dot success"></span><span id="page-count">0</span> pages</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="issues">Issues</div>
+    <div class="tab" data-tab="pages">Pages</div>
+    <div class="tab" data-tab="elements">Elements</div>
+  </div>
+
+  <div class="content">
+    <div id="tab-issues" class="tab-content active">
+      <div class="empty-state" id="issues-empty">
+        <div class="icon">🔍</div>
+        <p>No issues found yet. Click <strong>Scan Page</strong> to analyze the current page, then visit more pages and click <strong>Compare All</strong> to find inconsistencies.</p>
+      </div>
+      <div id="issues-list"></div>
+    </div>
+
+    <div id="tab-pages" class="tab-content">
+      <div class="empty-state" id="pages-empty">
+        <div class="icon">📄</div>
+        <p>No pages scanned yet. Click <strong>Scan Page</strong> on different pages to start tracking.</p>
+      </div>
+      <div id="pages-list"></div>
+    </div>
+
+    <div id="tab-elements" class="tab-content">
+      <div class="empty-state" id="elements-empty">
+        <div class="icon">🧩</div>
+        <p>Scan a page to see its UI elements listed here.</p>
+      </div>
+      <div id="elements-list"></div>
+    </div>
+  </div>
+
+  <script src="consistency.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>
