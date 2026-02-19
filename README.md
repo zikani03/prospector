@@ -14,6 +14,7 @@ A Chrome DevTools extension that tracks visited pages and compares UI elements (
 - **Cross-Page Comparison** — compares elements across visited pages to find inconsistencies in fonts, sizes, colors, and spacing
 - **VS Code-style Issues View** — issues grouped by category with error/warning/info severity levels
 - **Element Inspector** — browse all extracted elements and their styles in a table view
+- **Recommendations Tab** — actionable guidance (ESLint, a11y checkers, headings/images/button-input standardization) based on found issues
 
 ## Installation
 

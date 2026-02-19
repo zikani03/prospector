@@ -358,6 +358,18 @@
     .dot.warning { background: var(--warning); }
     .dot.info { background: var(--info); }
     .dot.success { background: var(--success); }
+
+    /* Links (improve contrast in dark theme) */
+    a {
+      color: #9cdcfe; /* high-contrast light blue */
+      text-decoration: underline;
+    }
+    a:hover, a:focus {
+      color: #c5e4fd;
+    }
+    a:visited {
+      color: #c586c0; /* distinguish visited, still readable */
+    }
   </style>
 </head>
 <body>
@@ -381,6 +393,7 @@
     <div class="tab active" data-tab="issues">Issues</div>
     <div class="tab" data-tab="pages">Pages</div>
     <div class="tab" data-tab="elements">Elements</div>
+    <div class="tab" data-tab="recommendations">Recommendations</div>
   </div>
 
   <div class="content">
@@ -406,6 +419,14 @@
         <p>Scan a page to see its UI elements listed here.</p>
       </div>
       <div id="elements-list"></div>
+    </div>
+
+    <div id="tab-recommendations" class="tab-content">
+      <div class="empty-state" id="recs-empty">
+        <div class="icon">💡</div>
+        <p>Recommendations will appear here based on identified issues. Scan a page to get started.</p>
+      </div>
+      <div id="recs-list"></div>
     </div>
   </div>
 
