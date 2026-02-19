@@ -65,6 +65,21 @@ function extractElements() {
         info.alt = el.alt || "";
         info.naturalWidth = el.naturalWidth;
         info.naturalHeight = el.naturalHeight;
+        info.loading = el.loading || "";
+        info.fetchPriority = el.fetchPriority || "";
+        info.decoding = el.decoding || "";
+        info.srcset = el.srcset || "";
+        info.sizes = el.sizes || "";
+        info.rectTop = rect.top;
+        info.rectBottom = rect.bottom;
+      }
+
+      if (category === "buttons") {
+        info.role = el.getAttribute("role") || "";
+        info.ariaLabel = el.getAttribute("aria-label") || "";
+        info.ariaLabelledBy = el.getAttribute("aria-labelledby") || "";
+        info.tabIndex = el.tabIndex;
+        info.title = el.title || "";
       }
 
       results[category].push(info);
@@ -72,6 +87,209 @@ function extractElements() {
   }
 
   return results;
+}
+
+/**
+ * Extract viewport height for above-fold calculations.
+ */
+function getViewportHeight() {
+  return window.innerHeight;
+}
+
+/**
+ * Get the text of the first h1 on the page.
+ */
+function getPrimaryH1Text() {
+  const h1 = document.querySelector("h1");
+  return h1 ? (h1.textContent || "").trim().substring(0, 200) : "";
+}
+
+/**
+ * Build a lightweight content signature for duplicate detection.
+ * Concatenates heading texts and element counts.
+ */
+function getContentSignature() {
+  const headings = Array.from(document.querySelectorAll("h1, h2, h3"))
+    .map((h) => h.textContent.trim().substring(0, 50))
+    .join("|");
+  const counts = [
+    document.querySelectorAll("button, [role='button']").length,
+    document.querySelectorAll("input").length,
+    document.querySelectorAll("a[href]").length,
+    document.querySelectorAll("img").length,
+  ].join(",");
+  return `${headings}::${counts}`;
+}
+
+/**
+ * Collect DOM size statistics.
+ */
+function getDomStats() {
+  const all = document.getElementsByTagName("*");
+  let hiddenCount = 0;
+  for (let i = 0; i < all.length; i++) {
+    const computed = window.getComputedStyle(all[i]);
+    if (
+      computed.display === "none" ||
+      computed.visibility === "hidden" ||
+      (computed.opacity === "0" && all[i].getBoundingClientRect().width === 0)
+    ) {
+      hiddenCount++;
+    }
+  }
+  return {
+    totalElementCount: all.length,
+    hiddenElementCount: hiddenCount,
+  };
+}
+
+/**
+ * Detect full-viewport overlay elements that may block content.
+ */
+function extractOverlays() {
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const overlays = [];
+  const candidates = document.querySelectorAll("*");
+
+  for (let i = 0; i < candidates.length; i++) {
+    const el = candidates[i];
+    const computed = window.getComputedStyle(el);
+    if (computed.position !== "fixed" && computed.position !== "absolute") continue;
+    if (computed.display === "none") continue;
+
+    const rect = el.getBoundingClientRect();
+    const coversWidth = rect.width >= viewportWidth * 0.9;
+    const coversHeight = rect.height >= viewportHeight * 0.9;
+
+    if (coversWidth && coversHeight) {
+      overlays.push({
+        tag: el.tagName.toLowerCase(),
+        classes: el.className || "",
+        id: el.id || "",
+        zIndex: computed.zIndex,
+        opacity: computed.opacity,
+        backgroundColor: computed.backgroundColor,
+        pointerEvents: computed.pointerEvents,
+        position: computed.position,
+        dimensions: {
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+        },
+      });
+    }
+  }
+  return overlays;
+}
+
+/**
+ * Detect elements with large CSS background images in the viewport (hero candidates).
+ */
+function extractHeroCandidates() {
+  const viewportHeight = window.innerHeight;
+  const viewportArea = window.innerWidth * viewportHeight;
+  const candidates = [];
+  const elements = document.querySelectorAll("*");
+
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i];
+    const computed = window.getComputedStyle(el);
+    if (computed.backgroundImage === "none" || !computed.backgroundImage) continue;
+
+    const rect = el.getBoundingClientRect();
+    if (rect.bottom < 0 || rect.top > viewportHeight) continue;
+
+    const area = rect.width * rect.height;
+    if (area < viewportArea * 0.2) continue;
+
+    candidates.push({
+      tag: el.tagName.toLowerCase(),
+      classes: el.className || "",
+      id: el.id || "",
+      backgroundImage: computed.backgroundImage.substring(0, 200),
+      backgroundSize: computed.backgroundSize,
+      rectTop: rect.top,
+      dimensions: {
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      },
+    });
+  }
+  return candidates;
+}
+
+/**
+ * Detect skeleton/shimmer loading placeholders.
+ */
+function extractSkeletons() {
+  const skeletons = [];
+  const candidates = document.querySelectorAll(
+    "[class*='skeleton'], [class*='shimmer'], [class*='placeholder'], [class*='loading']"
+  );
+
+  candidates.forEach((el) => {
+    const computed = window.getComputedStyle(el);
+    const rect = el.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return;
+
+    skeletons.push({
+      tag: el.tagName.toLowerCase(),
+      classes: el.className || "",
+      id: el.id || "",
+      styles: {
+        backgroundColor: computed.backgroundColor,
+        borderRadius: computed.borderRadius,
+        animationName: computed.animationName,
+      },
+      dimensions: {
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      },
+    });
+  });
+  return skeletons;
+}
+
+/**
+ * Collect third-party script and iframe hosts.
+ */
+function extractThirdPartyResources() {
+  const pageHost = window.location.host;
+  const thirdParties = new Map();
+
+  document.querySelectorAll("script[src], iframe[src]").forEach((el) => {
+    try {
+      const url = new URL(el.src, window.location.href);
+      if (url.host && url.host !== pageHost) {
+        const existing = thirdParties.get(url.host) || { host: url.host, count: 0, types: new Set() };
+        existing.count++;
+        existing.types.add(el.tagName.toLowerCase());
+        thirdParties.set(url.host, existing);
+      }
+    } catch (e) {
+      // Invalid URL, skip
+    }
+  });
+
+  return [...thirdParties.values()].map((tp) => ({
+    host: tp.host,
+    count: tp.count,
+    types: [...tp.types],
+  }));
+}
+
+/**
+ * Check if body/html has hidden visibility.
+ */
+function getBodyVisibility() {
+  const bodyComputed = window.getComputedStyle(document.body);
+  const htmlComputed = window.getComputedStyle(document.documentElement);
+  return {
+    bodyOpacity: bodyComputed.opacity,
+    bodyVisibility: bodyComputed.visibility,
+    htmlOpacity: htmlComputed.opacity,
+    htmlVisibility: htmlComputed.visibility,
+  };
 }
 
 /**
@@ -160,6 +378,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       framework,
       isSPA: framework !== null,
       elements,
+      viewportHeight: getViewportHeight(),
+      primaryH1Text: getPrimaryH1Text(),
+      contentSignature: getContentSignature(),
+      domStats: getDomStats(),
+      overlays: extractOverlays(),
+      heroCandidates: extractHeroCandidates(),
+      skeletons: extractSkeletons(),
+      thirdPartyResources: extractThirdPartyResources(),
+      bodyVisibility: getBodyVisibility(),
     });
   }
   return true;

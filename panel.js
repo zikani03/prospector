@@ -261,6 +261,73 @@ function renderRecommendations(issues) {
     });
   }
 
+  const hasImagePerf = issues.some(i => i.category.includes("Images: Performance"));
+  const hasLayoutPerf = issues.some(i => i.category.includes("Layout: Performance"));
+  const hasOverlay = issues.some(i => i.category.includes("Render Blocking"));
+  const hasTapTarget = issues.some(i => i.category.includes("Tap Targets"));
+  const hasA11yButton = issues.some(i => i.category.includes("Accessibility"));
+  const hasThirdParty = issues.some(i => i.category.includes("Third Parties"));
+  const hasSpaNav = issues.some(i => i.category.includes("SPA Navigation") || i.category.includes("SPA Health"));
+  const hasUrlHygiene = issues.some(i => i.category.includes("URL Hygiene") || i.category.includes("Content Duplication"));
+  const hasLoadingStates = issues.some(i => i.category.includes("Loading States"));
+
+  if (hasImagePerf || hasLayoutPerf) {
+    dynamic.push({
+      title: "Optimize LCP Images",
+      details: "Use <img> with fetchpriority=\"high\" for hero images. Avoid loading=\"lazy\" on above-the-fold content. Prefer <img> over CSS background-image for LCP candidates.",
+      link: "https://web.dev/articles/optimize-lcp"
+    });
+  }
+  if (hasOverlay) {
+    dynamic.push({
+      title: "Remove Render-Blocking Overlays",
+      details: "Full-viewport overlays and hidden body/html block content visibility. Review anti-flicker snippets, A/B test loaders, and hydration gates.",
+      link: "https://web.dev/articles/optimize-lcp#optimize_render_delay"
+    });
+  }
+  if (hasTapTarget) {
+    dynamic.push({
+      title: "Increase Tap Target Sizes",
+      details: "Interactive elements should be at least 44×44px per WCAG 2.5.8. Use min-width/min-height or padding to meet the threshold.",
+      link: "https://web.dev/articles/accessible-tap-targets"
+    });
+  }
+  if (hasA11yButton) {
+    dynamic.push({
+      title: "Add Accessible Names to Interactive Elements",
+      details: "Icon-only buttons and role=\"button\" elements need aria-label or title. Ensure custom buttons are focusable with tabindex=\"0\".",
+      link: "https://www.w3.org/WAI/ARIA/apg/patterns/button/"
+    });
+  }
+  if (hasThirdParty) {
+    dynamic.push({
+      title: "Audit Third-Party Scripts",
+      details: "Each third-party origin adds DNS lookup and connection overhead. Audit and remove unused scripts; consider self-hosting critical resources.",
+      link: "https://web.dev/articles/optimizing-content-efficiency-loading-third-party-javascript"
+    });
+  }
+  if (hasSpaNav) {
+    dynamic.push({
+      title: "Improve SPA Navigation Hygiene",
+      details: "Update document.title and h1 on route changes. Unmount old route views to prevent DOM bloat. Consider the View Transitions API for smoother navigation.",
+      link: "https://developer.chrome.com/docs/web-platform/view-transitions"
+    });
+  }
+  if (hasUrlHygiene) {
+    dynamic.push({
+      title: "Clean Up URL Parameters",
+      details: "Strip tracking parameters client-side and use canonical URLs. Consider implementing No-Vary-Search headers to improve prefetch cache hit rates.",
+      link: "https://developer.chrome.com/docs/web-platform/no-vary-search"
+    });
+  }
+  if (hasLoadingStates) {
+    dynamic.push({
+      title: "Standardize Loading Placeholders",
+      details: "Use consistent skeleton/shimmer styles (color, border-radius, animation) across all routes via shared CSS classes or design tokens.",
+      link: "https://web.dev/articles/ux-basics"
+    });
+  }
+
   const recs = [...baseRecs, ...dynamic];
 
   if (recs.length === 0) {
