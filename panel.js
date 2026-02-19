@@ -26,6 +26,8 @@ const pagesEmpty = document.getElementById("pages-empty");
 const pagesList = document.getElementById("pages-list");
 const elementsEmpty = document.getElementById("elements-empty");
 const elementsList = document.getElementById("elements-list");
+const recsEmpty = document.getElementById("recs-empty");
+const recsList = document.getElementById("recs-list");
 
 // --- Tab switching ---
 document.querySelectorAll(".tab").forEach((tab) => {
@@ -52,6 +54,7 @@ btnCompare.addEventListener("click", () => {
   const crossIssues = Consistency.compareSnapshots(snapshots);
   currentIssues = [...currentIssues, ...crossIssues];
   renderIssues(currentIssues);
+  renderRecommendations(currentIssues);
   statusText.textContent = `Compared ${snapshots.length} pages`;
 });
 
@@ -130,6 +133,7 @@ port.onMessage.addListener((message) => {
       renderIssues(currentIssues);
       renderPages(snapshots);
       renderElements(snapshot);
+      renderRecommendations(currentIssues);
       updateSummary();
       statusText.textContent = `Scanned: ${new URL(snapshot.url).pathname}`;
       btnScan.disabled = false;
@@ -207,6 +211,86 @@ function renderIssues(issues) {
 
   issuesList.innerHTML = html;
   updateSummary();
+}
+
+function renderRecommendations(issues) {
+  // Base recommendations always shown
+  const baseRecs = [
+    {
+      title: "Adopt ESLint (JavaScript/TypeScript)",
+      details: "Use ESLint with accessibility plugins (jsx-a11y for React) to catch common a11y and consistency issues during development.",
+      link: "https://eslint.org/"
+    },
+    {
+      title: "Use an Accessibility Checker",
+      details: "Run axe DevTools or Lighthouse to audit color contrast, ARIA, and structural accessibility problems.",
+      link: "https://www.deque.com/axe/devtools/"
+    },
+    {
+      title: "Add Pre-commit Hooks",
+      details: "Use lint-staged + husky to run linters before commits for early feedback.",
+      link: "https://github.com/okonet/lint-staged"
+    }
+  ];
+
+  // Derive hints from current issues
+  const hasHeadingIssues = issues.some(i => i.category.includes("Headings"));
+  const hasImageIssues = issues.some(i => i.category.includes("Images"));
+  const hasButtonOrInput = issues.some(i => i.category.includes("Buttons") || i.category.includes("Inputs"));
+
+  const dynamic = [];
+  if (hasHeadingIssues) {
+    dynamic.push({
+      title: "Heading Hierarchy Guidelines",
+      details: "Ensure a single h1 per page and avoid skipping levels (e.g., h2 after h1, then h3). Consider lint rules in your framework or content guidelines.",
+      link: "https://web.dev/heading-order/"
+    });
+  }
+  if (hasImageIssues) {
+    dynamic.push({
+      title: "Image Alt Text Checks",
+      details: "Require non-empty alt text for meaningful images. Consider CI checks using axe or similar.",
+      link: "https://webaim.org/techniques/alttext/"
+    });
+  }
+  if (hasButtonOrInput) {
+    dynamic.push({
+      title: "Standardize Buttons and Inputs",
+      details: "Adopt a shared UI component library or design tokens for fonts, radii, padding, and colors.",
+      link: "https://material.io/components?platform=web"
+    });
+  }
+
+  const recs = [...baseRecs, ...dynamic];
+
+  if (recs.length === 0) {
+    recsEmpty.style.display = "flex";
+    recsList.innerHTML = "";
+    return;
+  }
+
+  recsEmpty.style.display = "none";
+  let html = "";
+  recs.forEach(r => {
+    html += `
+      <div class="issue-group">
+        <div class="issue-group-header">
+          <span class="arrow">▼</span>
+          ${escapeHtml(r.title)}
+        </div>
+        <ul class="issue-list">
+          <li class="issue-item">
+            <span class="issue-icon info">ℹ</span>
+            <span class="issue-message">
+              ${escapeHtml(r.details)}
+              ${r.link ? `<div class="issue-detail"><a href="${r.link}" target="_blank">${escapeHtml(r.link)}</a></div>` : ""}
+            </span>
+          </li>
+        </ul>
+      </div>
+    `;
+  });
+  recsList.innerHTML = html;
 }
 
 function renderPages(pages) {
