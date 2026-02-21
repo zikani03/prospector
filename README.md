@@ -1,8 +1,8 @@
-# Prospector — UI Consistency Checker
+# Prospector - Chrome Extension 
 
-A Chrome DevTools extension that tracks visited pages and compares UI elements (buttons, inputs, headings, links, images) for visual and structural consistency.
-
-> NOTE: still in early development. Built with the help of [Amp](https://ampcode.com)
+Prospector helps developers and teams check UI Consistency of their web applications. 
+It is a Chrome DevTools extension that tracks visited pages and compares UI elements 
+(buttons, inputs, headings, links, images) for visual and structural consistency.
 
 ![[]](./screenshot-0.png)
 
