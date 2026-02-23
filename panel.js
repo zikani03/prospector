@@ -192,13 +192,28 @@ function renderIssues(issues) {
         <ul class="issue-list">
     `;
 
+    // Deduplicate identical issues and show occurrence counts
+    const deduped = [];
+    const seen = new Map();
     groupIssues.forEach((issue) => {
+      const key = `${issue.severity}|${issue.message}`;
+      if (seen.has(key)) {
+        seen.get(key).count++;
+      } else {
+        const entry = { issue, count: 1 };
+        seen.set(key, entry);
+        deduped.push(entry);
+      }
+    });
+
+    deduped.forEach(({ issue, count }) => {
       const icon = issue.severity === "error" ? "●" : issue.severity === "warning" ? "▲" : "ℹ";
+      const countBadge = count > 1 ? `<span class="issue-count">${count}</span>` : "";
       html += `
         <li class="issue-item">
           <span class="issue-icon ${issue.severity}">${icon}</span>
           <span class="issue-message">
-            ${escapeHtml(issue.message)}
+            ${countBadge}${escapeHtml(issue.message)}
             ${issue.detail ? `<div class="issue-detail">${escapeHtml(issue.detail)}</div>` : ""}
             ${issue.url ? `<div class="issue-detail">${escapeHtml(shortenUrl(issue.url))}</div>` : ""}
           </span>
